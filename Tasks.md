@@ -15,11 +15,11 @@ Hardware constraint carried through the whole plan: **RTX 3070, 8 GB VRAM**.
 
 ## Phase 1 — Hosting an open-source LLM locally
 
-- [ ] 1.1 Compare inference runtimes (e.g. Ollama, llama.cpp, vLLM, text-generation-webui) — trade-offs relevant to a single 8 GB GPU.
-- [ ] 1.2 Understand quantization (what it is, GGUF vs GPTQ/AWQ, why 4-bit is usually the sweet spot on 8 GB VRAM) and estimate VRAM budget for a candidate model + context length.
-- [ ] 1.3 Choose and justify a first model (size, quantization level) that fits the 3070's VRAM budget with headroom for context.
-- [ ] 1.4 Install the chosen runtime and get the model running locally.
-- [ ] 1.5 Query the model via its API (not just a chat UI) and understand the request/response shape (prompt, system message, sampling params).
+- [x] 1.1 Compare inference runtimes (e.g. Ollama, llama.cpp, vLLM, text-generation-webui) — trade-offs relevant to a single 8 GB GPU. **Decision: Ollama** — automatic VRAM/layer offload management, pre-quantized model registry, persistent local HTTP server.
+- [x] 1.2 Understand quantization (what it is, GGUF vs GPTQ/AWQ, why 4-bit is usually the sweet spot on 8 GB VRAM) and estimate VRAM budget for a candidate model + context length. **4-bit chosen: ~0.5 bytes/param, leaves headroom for KV cache.**
+- [x] 1.3 Choose and justify a first model (size, quantization level) that fits the 3070's VRAM budget with headroom for context. **Decision: Llama 3.1 8B (Meta, official, general-purpose), Q4_K_M, 4.9GB — leaves ~3.1GB headroom for KV cache.** (Considered qwen3.5:9b [1.4GB headroom, too tight] and its ornith:9b coding fine-tune [wrong specialization for a general RAG chatbot] first — chose Llama 3.1 8B for solid headroom margin plus being extremely well-documented for a first project.)
+- [x] 1.4 Install the chosen runtime and get the model running locally. **Verified empirically: Ollama itself uses ~5.7GB VRAM (4.9GB weights + ~0.8GB KV cache/compute buffers, matching prediction). Windows + background apps (Discord, Opera GX, etc.) baseline ~1.4GB — real free headroom while running ~0.9GB, tighter than the theoretical 3.1GB since that ignored background app usage.**
+- [x] 1.5 Query the model via its API (not just a chat UI) and understand the request/response shape (prompt, system message, sampling params). **Used /api/chat with {model, messages:[{role,content}]}; debugged https->http, missing /api/chat path, and model name typo along the way; understood streaming (default) vs stream:false for a single response.**
 - [ ] 1.6 Understand context window limits and what happens when they're exceeded.
 
 ## Phase 2 — RAG building blocks

@@ -1,19 +1,39 @@
-import os
-import numpy
-import langchain.text_splitter as text_splitter
+"""Client for talking to a locally-hosted Ollama model over its HTTP API."""
 
-from src.logger import Logger
+import requests
+
+from logger import Logger
+
 
 class Model:
+    """Thin wrapper around Ollama's ``/api/chat`` endpoint for one model."""
+
     def __init__(self, model_name: str, logger: Logger):
+        """
+        Args:
+            model_name: The Ollama model tag to query (e.g. "llama3.1:8b"),
+                must already be pulled locally (``ollama pull <model_name>``).
+            logger: Logger used to record outgoing prompts and raw responses.
+        """
         self.model_name = model_name
         self.logger = logger
-        self.model = self.load_model()
 
-    def load_model(self):
-        self.logger.info(f"Loading model: {self.model_name}")
-        return None  # Replace with actual model loading code
+    def post_prompt(self, prompt: str) -> str:
+        """Send a single user prompt to the model via Ollama's chat API.
 
-    def predict(self, input_data):
-        self.logger.info(f"Making prediction with model: {self.model_name}")
-        return None  # Replace with actual prediction code
+        Uses Ollama's default (streaming) behavior, so the returned text
+        will contain multiple newline-delimited JSON chunks rather than a
+        single JSON object — pass ``"stream": false`` in the request body
+        to get one consolidated response instead.
+
+        Args:
+            prompt: The user's message to send to the model.
+
+        Returns:
+            The raw, unparsed response body text from Ollama.
+        """
+        self.logger.info(f"Posting prompt to model {self.model_name}: {prompt}")
+        url = "http://localhost:11434/api/chat"
+        response = requests.post(url, json={"model": self.model_name, "messages": [{"role": "user", "content": prompt}]})
+        self.logger.info(f"Received response: {response.text}")
+        return response.text
