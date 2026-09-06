@@ -2,6 +2,8 @@
 
 import os
 
+from pathlib import Path
+
 
 class Singleton:
     """Base class that restricts a subclass to a single shared instance.
@@ -27,3 +29,4 @@ class Config(Singleton):
 
     def __init__(self):
         self.api_key = os.getenv("API_KEY", "default_api_key")
+        self.ingestion_folder = os.path.join(os.path.dirname(os.getcwd()), "app", "data", "ingestion")
